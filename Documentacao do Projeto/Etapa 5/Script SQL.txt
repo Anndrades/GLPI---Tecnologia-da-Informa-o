@@ -1,0 +1,92 @@
+PRAGMA foreign_keys = ON;
+
+BEGIN TRANSACTION;
+
+CREATE TABLE perfil (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome        TEXT NOT NULL UNIQUE,
+    descricao   TEXT,
+    ativo       INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    criado_em   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE usuario (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome            TEXT NOT NULL CHECK (length(trim(nome)) > 0),
+    email           TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    senha_hash      TEXT NOT NULL,
+    perfil_id       INTEGER NOT NULL,
+    ativo           INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    criado_em       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (perfil_id) REFERENCES perfil(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE equipe (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome        TEXT NOT NULL UNIQUE,
+    descricao   TEXT,
+    ativo       INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    criado_em   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE equipe_usuario (
+    equipe_id   INTEGER NOT NULL,
+    usuario_id  INTEGER NOT NULL,
+    associado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (equipe_id, usuario_id),
+    FOREIGN KEY (equipe_id) REFERENCES equipe(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+);
+
+CREATE TABLE categoria (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome        TEXT NOT NULL UNIQUE,
+    descricao   TEXT,
+    ativo       INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    criado_em   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE prioridade (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome        TEXT NOT NULL UNIQUE,
+    nivel       INTEGER NOT NULL UNIQUE CHECK (nivel >= 1),
+    ativo       INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    criado_em   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE status_chamado (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome            TEXT NOT NULL UNIQUE,
+    ordem           INTEGER NOT NULL UNIQUE CHECK (ordem >= 1),
+    finalizador     INTEGER NOT NULL DEFAULT 0 CHECK (finalizador IN (0, 1)),
+    ativo           INTEGER NOT NULL DEFAULT 1 CHECK (ativo IN (0, 1)),
+    criado_em       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE chamado (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo          TEXT NOT NULL CHECK (length(trim(titulo)) > 0),
+    descricao       TEXT NOT NULL CHECK (length(trim(descricao)) > 0),
+    solicitante_id  INTEGER NOT NULL,
+    categoria_id    INTEGER NOT NULL,
+    prioridade_id   INTEGER NOT NULL,
+    status_id       INTEGER NOT NULL,
+    responsavel_id  INTEGER,
+    equipe_id       INTEGER,
+    solucao         TEXT,
+    criado_em       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    resolvido_em    TEXT,
+    encerrado_em    TEXT,
+    FOREIGN KEY (solicitante_id) REFERENCES usuario(id) ON DELETE RESTRICT,
+    FOREIGN KEY (categoria_id) REFERENCES categoria(id) ON DELETE RESTRICT,
+    FOREIGN KEY (prioridade_id) REFERENCES prioridade(id) ON DELETE RESTRICT,
+    FOREIGN KEY (status_id) REFERENCES status_chamado(id) ON DELETE RESTRICT,
+    FOREIGN KEY (responsavel_id) REFERENCES usuario(id) ON DELETE SET NULL,
+    FOREIGN KEY (equipe_id) REFERENCES equipe(id) ON DELETE SET NULL
+);
+
+CREATE TABLE interacao (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    chamado_id  INTEGER NOT NULL,
